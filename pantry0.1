@@ -1,0 +1,114 @@
+pantry = {}#master dictionary for all food items
+
+#list of differentmeasurement units allowed
+unit_types = ["each", "kg", "g", "lb", "L", "mL"]
+
+#takes input from user iff input is a valid number
+def num_check_input(prompt):
+    while 1:
+        val = input(prompt)
+        try:
+            return float(val)
+            break
+        except ValueError:
+            print ("Invalid Entry!\n")
+
+#takes input from user iff input is a valid measurement type 
+def unit_check_input(prompt):
+    
+    while 1:
+        val = input(prompt)
+        if val in unit_types:
+            return val
+            break
+        if val == "HELP":
+            print (unit_types)
+        else:
+            print ("Invalid Entry!\n")
+
+#takes user input for all values associated with food and puts them in pantry
+def new_item():
+    a = input("Enter the name of the food.\n")
+    a = a.capitalize()
+    b = num_check_input("Enter the total quantity of the item you added.\n")
+    c = num_check_input("Enter the total cost of the item you added($).\n")
+    if a in pantry:#checks if the item already exists, if so adds the values
+        pantry[a][0]=pantry[a][0]+b
+        pantry[a][1]=pantry[a][1]+c
+    else:#creates the unit of measurement for the new item
+        d = unit_check_input("This is a new item!Enter the unit "
+        "of measurement for the item.\n")
+        pantry[a] = [b,c,d]
+
+def correct_item():
+    a = input("Enter the name of the item to correct.\n")
+    a = a.capitalize()
+    if a in pantry:
+        print("{}: {}{} at ${}.\n"
+        .format(item,pantry[item][0],pantry[item][2],pantry[item][1]))
+        b = num_check_input("Please enter the new quantity of the item.\n")
+        c = num_check_input("Please enter the new cost of the item.\n")
+        d = unit_check_input("Please enter the unit of measurement of the item.\n")
+        pantry[a] = [b,c,d]
+    else:
+        print ("Sorry I could not find that item!")
+        
+def cook():
+    cost_list = {} #dictionary for the cost and quantity of the recipe
+    print ("Welcome to the virtual kitchen! Select an item to use, "
+    "or enter 'end' to leave.")
+    while 1:
+        a = input("")
+        a=a.capitalize()
+        if a in pantry:
+            quantity = num_check_input("Enter the amount of {} to use ({})\n"
+            .format(a,pantry[a][2]))
+            print("Please enter the next item, or enter 'end' to finish")
+            #calculates fraction of item used, and the cost of that fration
+            cost = quantity/pantry[a][0]*pantry[a][1]
+            pantry[a][1]-=cost #subracts cost of item
+            pantry[a][0]-=quantity #subtracts quanitity of item
+            cost_list[a] = [quantity,cost] #stores quantity and cost in the dict
+        elif a == "End":
+           #add the total cost of all items in cost_list and print them
+            total_cost = 0
+            print ("You used the following in your recipe:")
+            for item in cost_list:
+                total_cost += cost_list[item][1]
+                print ("{}{} of {}, which cost ${}"
+                .format(cost_list[item][0],pantry[item][2],item,cost_list[item][1]))
+            print ("Your total cost was ${}".format(total_cost))
+            break
+        else:
+           print ("You don't have any of that")
+           
+print("Welcome to the Virtual Pantry!")
+print("Enter HELP for pantry commands.")
+
+while 1:
+    userinput = str.upper(input("PantryBot :\n"))
+#Help
+    if userinput == "HELP":
+        print("1 - Enter new stock.\n2 - View Stock Levels"
+              "\n3 - Correct Inventory.\n4 - Cook, Use, Modify")
+
+#Enter New Stock
+    if userinput == "1":
+        new_item()
+
+#View Pantry
+    if userinput == "2":
+        if pantry == {}:
+            print("Your pantry is empty!")
+        else:
+            for item in pantry:
+                print("{}: {}{} at ${}."
+                      .format(item,pantry[item][0],pantry[item][2],pantry[item][1]))
+#Correct Inventory
+    if userinput == "3":
+        correct_item()
+        
+#Cook, Use, Modify
+    if userinput == "4":
+        cook()
+
