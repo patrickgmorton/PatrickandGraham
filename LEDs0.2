@@ -1,0 +1,79 @@
+from collections import defaultdict
+from datetime import datetime
+from datetime import date
+from datetime import time
+import math
+BY_COORD = defaultdict()
+BY_X = defaultdict(list)
+BY_Y = defaultdict(list)
+
+
+#Map related variables- width, height, and location of UTC time        
+gwidth = 75
+gheight = 30
+gmt_timezone = 11
+
+class LED:
+
+    def __init__(self,xpos,ypos,gwidth,gheight):
+        self.x = xpos
+        self.y = ypos
+        self.illuminated = False
+        self.time = 0
+        BY_COORD[(xpos,ypos)] = (self)
+        BY_X[xpos].append(self)
+        BY_Y[ypos].append(self)
+        self.latitude = ((self.y/gheight)*180 - 90) * -1
+        self.longitude = ((self.x/gwidth)*360 -180)
+
+    def turn_on(self):
+        self.illuminated = True
+
+    def turn_off(self):
+        self.illuminated = False
+
+
+
+LED_list = [LED(x,y,gwidth,gheight) for x in range(gwidth) for y in range(gheight)]
+
+def daylight():
+    #Time related variables
+    now = datetime.utcnow()
+    d1 = now.replace(month=1, day=1)
+    this_date = date.toordinal(now) - date.toordinal(d1)
+    current_time = now.hour+now.minute/60
+    #Degrees in orbit (Vernal Equinox = 0)
+    B = (360/365)*(this_date-81)
+    #declination
+    #Equation of Time and Time Correction Factor (Fixing eccentricities)
+    EoT = math.degrees(2.87*math.sin(2*B) - 7.53 * math.cos(B) - 1.5*math.sin(B))
+    delta = math.asin(math.sin(math.radians(23.45)) *
+                            math.sin(math.radians(B)))
+    
+    for each in LED_list:
+        #Local Standard Time Meridian
+        LSTM = 15 * (round(each.longitude/15))
+        TC = 4 * (each.longitude - LSTM) + EoT
+        #Local Solar Time and Hour Angle
+        LST = current_time + LSTM/15 + TC/60
+        if LST < 0:
+            LST = LST + 24
+        HRA = math.radians(15 * (LST - 12))
+        #Elevation Angle
+        elevation_angle = math.degrees(math.asin(math.sin(delta)*math.sin(math.radians(each.latitude)) +
+                                    math.cos(delta)*math.cos(math.radians(each.latitude))*math.cos(HRA)))
+    
+        if elevation_angle >= 0:
+            each.turn_on()
+        else:
+            each.turn_off()
+
+daylight()
+#Print light status of all LEDs line by line to make a map
+def print_lights():
+    for y in BY_Y:
+        for x in BY_X:
+            print(int(BY_COORD[(x,y)].illuminated),end = "")
+        print("")
+
+print_lights()
